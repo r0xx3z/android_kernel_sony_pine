@@ -1,0 +1,59 @@
+name: Start build
+on:
+  workflow_dispatch:
+
+jobs:
+  Building:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 🔄 Checkout Code
+      uses: actions/checkout@v5
+      
+- name: 📦 Install Dependencies
+  run: |
+    sudo apt update -y
+    sudo apt install -y bc bison build-essential curl flex git libssl-dev lz4 \
+    python-is-python3 wget zip
+
+- name: 📥 Clone Kernel Source
+  run: |
+    git clone -b cm-14.1 https://github.com/r0xx3z/kernel_sony_pine.git kernel
+
+- name: 🧰 Clone GCC Toolchain (Android 4.9)
+  run: |
+    git clone https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9 -b nougat-release
+
+- name: 📁 Create Output Directory
+  run: |
+    mkdir KERNEL_OUT
+
+- name: ⚙️ Setup Environment
+  run: |
+    echo "ARCH=arm64" >> $GITHUB_ENV
+    echo "SUBARCH=arm64" >> $GITHUB_ENV
+    echo "KBUILD_BUILD_USER=r0xx3z" >> $GITHUB_ENV
+    echo "KBUILD_BUILD_HOST=MKERNEL" >> $GITHUB_ENV
+
+- name: 🛠️ Build Kernel (pine)
+  run: |
+    export PATH=$GITHUB_WORKSPACE/aarch64-linux-android-4.9/bin:$PATH
+
+    make -C kernel O=../KERNEL_OUT ARCH=arm64 \
+    CROSS_COMPILE=../aarch64-linux-android-4.9/bin/aarch64-linux-android- \
+    pine_defconfig
+
+    make -C kernel O=../KERNEL_OUT ARCH=arm64 \
+    CROSS_COMPILE=../aarch64-linux-android-4.9/bin/aarch64-linux-android- \
+    -j$(nproc --all)
+
+- name: 📦 Prepare Output
+  run: |
+    mkdir output
+    cp KERNEL_OUT/arch/arm64/boot/Image.gz-dtb output/ || true
+
+- name: 📤 Upload Kernel Files
+  uses: actions/upload-artifact@v5
+  with:
+    name: XperiaL1-Kernel
+    path: output/*
