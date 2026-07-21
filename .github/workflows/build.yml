@@ -17,7 +17,7 @@ jobs:
     - name: 📦 Install Dependencies
       run: |
         sudo apt update -y
-        sudo apt install bc cpio flex bison aptitude git python-is-python3 tar aria2 perl wget curl lz4 libssl-dev -y
+        sudo apt install bc cpio flex bison aptitude git python-is-python2 tar aria2 perl wget curl lz4 libssl-dev -y
 
     - name: 🔧 Clone Toolchain 
       run: |
